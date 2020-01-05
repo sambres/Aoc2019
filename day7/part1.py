@@ -10,7 +10,7 @@ f = open("input", "r")
 contents = f.read()
 array = contents.split(',')
 
-# phases = [4, 3, 2, 1, 0]
+# phases = [[1, 0, 4, 3, 2]]
 phases = list(map(list, permutations(range(5), 5)))
 # print(len(phases))
 idealPhase = None
@@ -19,7 +19,7 @@ for phase in phases:
     output = 0
     for index, thruster in enumerate(['A', 'B', 'C', 'D', 'E']):
         output = intCode(array, [output, phase[index]])
-    print(phase, output)
+    # print(phase, output)
     if int(output) > maxOutput:
         idealPhase = phase
         maxOutput = int(output)
