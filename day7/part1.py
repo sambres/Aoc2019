@@ -2,7 +2,6 @@
 from intcode import intCode
 from itertools import permutations
 import time
-import math
 
 start_time = time.time()
 
@@ -18,7 +17,7 @@ maxOutput = 0
 for phase in phases:
     output = 0
     for index, thruster in enumerate(['A', 'B', 'C', 'D', 'E']):
-        output = intCode(array, [output, phase[index]])
+        output = intCode(array, [phase[index], output])
     # print(phase, output)
     if int(output) > maxOutput:
         idealPhase = phase

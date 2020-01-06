@@ -1,90 +1,71 @@
-import math
+from intcode import intCodeAdvance
+from itertools import permutations
 import time
+
 start_time = time.time()
 
 f = open("input", "r")
 contents = f.read()
+array = contents.split(',')
 
 
-class Planet:
+class Program:
 
-    def __init__(self, name, orbited):
-        self.orbited = orbited
-        self.orbits = []
+    def __init__(self, name, phase):
         self.name = name
+        self.phase = phase
+        self.terminated = False
+        self.step = 0
+        self.output = 0
+        self.input = [self.phase]
+        self.commands = array.copy()
 
     def __repr__(self):
-        return self.name + ')' + ','.join(map(lambda x: x.name, self.orbits)) + ((self.orbited and '[' + self.orbited.name + ']') or '')
+        return f'[{self.name}] T: {self.terminated}, step: {self.step}, input: {self.input}, output: {self.output}'
+
+    def go(self, input):
+        result = None
+        self.input = self.input + input
+        print('input', self.input)
+        result = intCodeAdvance(self.commands, self.input, self.step)
+        self.output = list(map(int,  result[0]))
+        if result[1]:
+            self.terminated = True
+        else:
+            self.step = result[2]
 
 
-def findPlanet(planets, root, search, count=0, previous=None):
-    if root.name == search:
-        print('here', count)
-        return count
-    for p in root.orbits + [root.orbited]:
-        if p.name not in planetsDic or (previous and p.name == previous.name):
-            continue
-        found = findPlanet(planets, p, search, count + 1, root)
-        if found:
-            return found
-    return 0
+# phases = [[9, 8, 7, 6, 5]]
+# phases = [[9, 7, 8, 5, 6]]
+phases = list(map(list, permutations(map(lambda x: x + 5, range(5)), 5)))
+# print(len(phases))
+idealPhase = None
+maxOutput = 0
+for phase in phases:
+    programs = []
+    for index, thruster in enumerate(['A', 'B', 'C', 'D', 'E']):
+        p = Program(thruster, phase[index])
+        programs.append(p)
 
+    output = [0]
+    currentProgram = 0
+    while programs[-1].terminated == False:
+        program = programs[currentProgram]
+        if program.terminated == False:
+            # print('GO', program)
+            program.go(output)
+            # print('FINISH', program)
+        # print(output)
+        output = program.output
+        currentProgram = (currentProgram + 1) % len(programs)
 
-def searchSanta(orbits, planet, origin, count=0):
-    print('planet', planet, origin)
-    if planet[0] == 'SAN' or planet[1] == 'SAN':
-        return (True, count)
-    planet.append(True)
-    for p in filter(lambda o: len(o) < 3, orbits):
-        if p[1] == planet[0] and p[1] != origin:
-            resultR, rcount = searchSanta(orbits, p, p[1], count + 1)
-            print('resultR', resultR)
-            if resultR:
-                return (resultR, rcount)
+    # for index, thruster in enumerate(['A', 'B', 'C', 'D', 'E']):
+    #     output = intCodeAdvance(array, [output, phase[index]])
+    # print(phase, output)
+    if int(output[-1]) > maxOutput:
+        idealPhase = phase
+        maxOutput = int(output[-1])
 
-        if p[0] == planet[1] and p[0] != origin:
-            resultL, lcount = searchSanta(orbits, p, p[0], count + 1)
-            print('resultL', resultL)
-            if resultL:
-                return (resultL, lcount)
-    return (False, count)
-
-
-array = contents.split('\n')
-
-you = None
-santa = None
-orbits = []
-planetsDic = {}
-for orbit in array:
-    print('orbit', orbit)
-    couple = orbit.split(')')
-
-    orbited = None
-    if couple[0] in planetsDic:
-        orbited = planetsDic[couple[0]]
-    else:
-        orbited = Planet(couple[0], None)
-        planetsDic[orbited.name] = orbited
-
-    orbiting = None
-    if couple[1] in planetsDic:
-        orbiting = planetsDic[couple[1]]
-        orbiting.orbited = orbited
-    else:
-        orbiting = Planet(couple[1], orbited)
-        planetsDic[orbiting.name] = orbiting
-
-    orbited.orbits.append(orbiting)
-
-santa = planetsDic['SAN'].orbited
-you = planetsDic['YOU'].orbited
-
-planets = list(planetsDic.values())
-
-print(planets)
-
-res = findPlanet(planetsDic, you, santa.name)
-print(res)
+print('final', maxOutput, idealPhase)
 
 print("--- %s seconds ---" % (time.time() - start_time))
